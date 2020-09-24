@@ -1,0 +1,49 @@
+{
+    "name": "test-network-${ORG}",
+    "version": "1.0.0",
+    "client": {
+        "organization": "${NAMEORG}",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "${NAMEORG}": {
+            "mspid": "${NAMEORG}MSP",
+            "peers": [
+                "peer0.${ORG}.covid-ins.com"
+            ],
+            "certificateAuthorities": [
+                "ca.${ORG}.covid-ins.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.${ORG}.covid-ins.com": {
+            "url": "grpcs://${P0IP}:${P0PORT}",
+            "tlsCACerts": {
+                "pem": "${PEERPEM}"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.${ORG}.covid-ins.com",
+                "hostnameOverride": "peer0.${ORG}.covid-ins.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.${ORG}.covid-ins.com": {
+            "url": "https://localhost:${CAPORT}",
+            "caName": "ca-${ORG}",
+            "tlsCACerts": {
+                "pem": ["${CAPEM}"]
+            },
+            "httpOptions": {
+                "verify": false
+            }
+        }
+    }
+}

@@ -1,0 +1,441 @@
+
+
+function createInsurance {
+
+  echo
+	echo "Enroll the CA admin"
+  echo
+	mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/
+
+	export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/
+#  rm -rf $FABRIC_CA_CLIENT_HOME/fabric-ca-client-config.yaml
+#  rm -rf $FABRIC_CA_CLIENT_HOME/msp
+
+  set -x
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:7054 --caname ca-insurance --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+  echo 'NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/localhost-7054-ca-insurance.pem
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/localhost-7054-ca-insurance.pem
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/localhost-7054-ca-insurance.pem
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/localhost-7054-ca-insurance.pem
+    OrganizationalUnitIdentifier: orderer' > ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/msp/config.yaml
+	
+  echo
+	echo "Add affiliation"
+  echo
+	fabric-ca-client affiliation add insurance --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem 
+	fabric-ca-client affiliation add insurance.client --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem 
+	fabric-ca-client affiliation add insurance.admin --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem 
+	fabric-ca-client affiliation add insurance.peer --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem 
+  echo
+	echo "Register peer0"
+  echo
+  set -x
+	fabric-ca-client register --caname ca-insurance --id.name peer0 --id.secret peer0pw --id.type peer --id.affiliation insurance.peer --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem 
+  set +x
+
+  echo
+  echo "Register user"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-insurance --id.name user1 --id.secret user1pw --id.type client --id.affiliation insurance.client --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+  echo
+  echo "Register the org admin"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-insurance --id.name insuranceadmin --id.secret insuranceadminpw --id.type admin --id.affiliation insurance.peer --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+	mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/peers
+  mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com
+
+  echo
+  echo "## Generate the peer0 msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://peer0:peer0pw@localhost:7054 --caname ca-insurance -M ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/msp --csr.hosts peer0.insurance.covid-ins.com --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/msp/config.yaml
+
+  echo
+  echo "## Generate the peer0-tls certificates"
+  echo
+  set -x
+  fabric-ca-client enroll -u https://peer0:peer0pw@localhost:7054 --caname ca-insurance -M ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls --enrollment.profile tls --csr.hosts peer0.insurance.covid-ins.com --csr.hosts localhost --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/ca.crt
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/signcerts/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/server.crt
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/keystore/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/server.key
+
+  mkdir ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/msp/tlscacerts
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/msp/tlscacerts/ca.crt
+
+  mkdir ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/tlsca
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/tlsca/tlsca.insurance.covid-ins.com-cert.pem
+
+  mkdir ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/ca
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/peers/peer0.insurance.covid-ins.com/msp/cacerts/* ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/ca/ca.insurance.covid-ins.com-cert.pem
+
+  mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/users
+  mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/users/User1@insurance.covid-ins.com
+
+  echo
+  echo "## Generate the user msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://user1:user1pw@localhost:7054 --caname ca-insurance -M ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/users/User1@insurance.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+  mkdir -p organizations/peerOrganizations/insurance.covid-ins.com/users/Admin@insurance.covid-ins.com
+
+  echo
+  echo "## Generate the org admin msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://insuranceadmin:insuranceadminpw@localhost:7054 --caname ca-insurance -M ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/users/Admin@insurance.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/insurance/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/insurance.covid-ins.com/users/Admin@insurance.covid-ins.com/msp/config.yaml
+
+}
+
+
+function createHospital {
+
+  echo
+	echo "Enroll the CA admin"
+  echo
+	mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/
+
+	export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/
+#  rm -rf $FABRIC_CA_CLIENT_HOME/fabric-ca-client-config.yaml
+#  rm -rf $FABRIC_CA_CLIENT_HOME/msp
+
+  set -x
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:8054 --caname ca-hospital --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  echo 'NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/localhost-8054-ca-hospital.pem
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/localhost-8054-ca-hospital.pem
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/localhost-8054-ca-hospital.pem
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/localhost-8054-ca-hospital.pem
+    OrganizationalUnitIdentifier: orderer' > ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/msp/config.yaml
+
+  echo
+	echo "Add affiliation"
+  echo
+	fabric-ca-client affiliation add hospital --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem 
+	fabric-ca-client affiliation add hospital.client --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem 
+	fabric-ca-client affiliation add hospital.admin --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem 
+	fabric-ca-client affiliation add hospital.peer --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem 
+  echo
+	echo "Register peer0"
+  echo
+  set -x
+	fabric-ca-client register --caname ca-hospital --id.name peer0 --id.secret peer0pw --id.type peer --id.affiliation hospital.peer --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  echo
+  echo "Register user"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-hospital --id.name user1 --id.secret user1pw --id.type client --id.affiliation hospital.client --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  echo
+  echo "Register the org admin"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-hospital --id.name hospitaladmin --id.secret hospitaladminpw --id.type admin --id.affiliation hospital.admin --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+	mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/peers
+  mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com
+
+  echo
+  echo "## Generate the peer0 msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://peer0:peer0pw@localhost:8054 --caname ca-hospital -M ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/msp --csr.hosts peer0.hospital.covid-ins.com --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/msp/config.yaml
+
+  echo
+  echo "## Generate the peer0-tls certificates"
+  echo
+  set -x
+  fabric-ca-client enroll -u https://peer0:peer0pw@localhost:8054 --caname ca-hospital -M ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls --enrollment.profile tls --csr.hosts peer0.hospital.covid-ins.com --csr.hosts localhost --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/ca.crt
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/signcerts/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/server.crt
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/keystore/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/server.key
+
+  mkdir ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/msp/tlscacerts
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/msp/tlscacerts/ca.crt
+
+  mkdir ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/tlsca
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/tlsca/tlsca.hospital.covid-ins.com-cert.pem
+
+  mkdir ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/ca
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/peers/peer0.hospital.covid-ins.com/msp/cacerts/* ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/ca/ca.hospital.covid-ins.com-cert.pem
+
+  mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/users
+  mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/users/User1@hospital.covid-ins.com
+
+  echo
+  echo "## Generate the user msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://user1:user1pw@localhost:8054 --caname ca-hospital -M ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/users/User1@hospital.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  mkdir -p organizations/peerOrganizations/hospital.covid-ins.com/users/Admin@hospital.covid-ins.com
+
+  echo
+  echo "## Generate the org admin msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://hospitaladmin:hospitaladminpw@localhost:8054 --caname ca-hospital -M ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/users/Admin@hospital.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/hospital/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/hospital.covid-ins.com/users/Admin@hospital.covid-ins.com/msp/config.yaml
+
+}
+
+function createCustomer {
+
+  echo
+	echo "Enroll the CA admin"
+  echo
+	mkdir -p organizations/peerOrganizations/customer.covid-ins.com/
+
+	export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/peerOrganizations/customer.covid-ins.com/
+#  rm -rf $FABRIC_CA_CLIENT_HOME/fabric-ca-client-config.yaml
+#  rm -rf $FABRIC_CA_CLIENT_HOME/msp
+
+  set -x
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:10054 --caname ca-customer --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  echo 'NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/localhost-10054-ca-customer.pem
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/localhost-10054-ca-customer.pem
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/localhost-10054-ca-customer.pem
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/localhost-10054-ca-customer.pem
+    OrganizationalUnitIdentifier: orderer' > ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/msp/config.yaml
+
+  echo
+	echo "Add affiliation"
+  echo
+	fabric-ca-client affiliation add customer --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem 
+	fabric-ca-client affiliation add customer.client --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem 
+	fabric-ca-client affiliation add customer.admin --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem 
+	fabric-ca-client affiliation add customer.peer --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem 
+  echo
+	echo "Register peer0"
+  echo
+  set -x
+	fabric-ca-client register --caname ca-customer --id.name peer0 --id.secret peer0pw --id.type peer --id.affiliation customer.peer --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  echo
+  echo "Register user"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-customer --id.name user1 --id.secret user1pw --id.type client --id.affiliation customer.client --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  echo
+  echo "Register the org admin"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-customer --id.name customeradmin --id.secret customeradminpw --id.type admin --id.affiliation customer.admin --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+	mkdir -p organizations/peerOrganizations/customer.covid-ins.com/peers
+  mkdir -p organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com
+
+  echo
+  echo "## Generate the peer0 msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://peer0:peer0pw@localhost:10054 --caname ca-customer -M ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/msp --csr.hosts peer0.customer.covid-ins.com --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/msp/config.yaml
+
+  echo
+  echo "## Generate the peer0-tls certificates"
+  echo
+  set -x
+  fabric-ca-client enroll -u https://peer0:peer0pw@localhost:10054 --caname ca-customer -M ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls --enrollment.profile tls --csr.hosts peer0.customer.covid-ins.com --csr.hosts localhost --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/ca.crt
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/signcerts/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/server.crt
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/keystore/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/server.key
+
+  mkdir ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/msp/tlscacerts
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/msp/tlscacerts/ca.crt
+
+  mkdir ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/tlsca
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/tlsca/tlsca.customer.covid-ins.com-cert.pem
+
+  mkdir ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/ca
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/peers/peer0.customer.covid-ins.com/msp/cacerts/* ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/ca/ca.customer.covid-ins.com-cert.pem
+
+  mkdir -p organizations/peerOrganizations/customer.covid-ins.com/users
+  mkdir -p organizations/peerOrganizations/customer.covid-ins.com/users/User1@customer.covid-ins.com
+
+  echo
+  echo "## Generate the user msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://user1:user1pw@localhost:10054 --caname ca-customer -M ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/users/User1@customer.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  mkdir -p organizations/peerOrganizations/customer.covid-ins.com/users/Admin@customer.covid-ins.com
+
+  echo
+  echo "## Generate the org admin msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://customeradmin:customeradminpw@localhost:10054 --caname ca-customer -M ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/users/Admin@customer.covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/customer/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/msp/config.yaml ${PWD}/organizations/peerOrganizations/customer.covid-ins.com/users/Admin@customer.covid-ins.com/msp/config.yaml
+
+}
+
+
+function createOrderer {
+
+  echo
+	echo "Enroll the CA admin"
+  echo
+	mkdir -p organizations/ordererOrganizations/covid-ins.com
+
+	export FABRIC_CA_CLIENT_HOME=${PWD}/organizations/ordererOrganizations/covid-ins.com
+#  rm -rf $FABRIC_CA_CLIENT_HOME/fabric-ca-client-config.yaml
+#  rm -rf $FABRIC_CA_CLIENT_HOME/msp
+
+  set -x
+  fabric-ca-client enroll -u https://admin:adminpw@localhost:9054 --caname ca-orderer --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+  set +x
+
+  echo 'NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/localhost-9054-ca-orderer.pem
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/localhost-9054-ca-orderer.pem
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/localhost-9054-ca-orderer.pem
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/localhost-9054-ca-orderer.pem
+    OrganizationalUnitIdentifier: orderer' > ${PWD}/organizations/ordererOrganizations/covid-ins.com/msp/config.yaml
+
+
+  echo
+	echo "Add affiliation"
+  echo
+	fabric-ca-client affiliation add ordererOrg --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem 
+	fabric-ca-client affiliation add ordererOrg.orderer --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem 
+	fabric-ca-client affiliation add ordererOrg.admin --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem 
+  echo
+	echo "Register orderer"
+  echo
+  set -x
+	fabric-ca-client register --caname ca-orderer --id.name orderer --id.secret ordererpw --id.type orderer --id.affiliation ordererOrg.orderer --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+    set +x
+
+  echo
+  echo "Register the orderer admin"
+  echo
+  set -x
+  fabric-ca-client register --caname ca-orderer --id.name ordererAdmin --id.secret ordererAdminpw --id.type admin --id.affiliation ordererOrg.admin --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+  set +x
+
+	mkdir -p organizations/ordererOrganizations/covid-ins.com/orderers
+  mkdir -p organizations/ordererOrganizations/covid-ins.com/orderers/covid-ins.com
+
+  mkdir -p organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com
+
+  echo
+  echo "## Generate the orderer msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://orderer:ordererpw@localhost:9054 --caname ca-orderer -M ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/msp --csr.hosts orderer.covid-ins.com --csr.hosts localhost --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/msp/config.yaml ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/msp/config.yaml
+
+  echo
+  echo "## Generate the orderer-tls certificates"
+  echo
+  set -x
+  fabric-ca-client enroll -u https://orderer:ordererpw@localhost:9054 --caname ca-orderer -M ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls --enrollment.profile tls --csr.hosts orderer.covid-ins.com --csr.hosts localhost --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/ca.crt
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/signcerts/* ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/server.crt
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/keystore/* ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/server.key
+
+  mkdir ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/msp/tlscacerts
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/msp/tlscacerts/tlsca.covid-ins.com-cert.pem
+
+  mkdir ${PWD}/organizations/ordererOrganizations/covid-ins.com/msp/tlscacerts
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/orderers/orderer.covid-ins.com/tls/tlscacerts/* ${PWD}/organizations/ordererOrganizations/covid-ins.com/msp/tlscacerts/tlsca.covid-ins.com-cert.pem
+
+  mkdir -p organizations/ordererOrganizations/covid-ins.com/users
+  mkdir -p organizations/ordererOrganizations/covid-ins.com/users/Admin@covid-ins.com
+
+  echo
+  echo "## Generate the admin msp"
+  echo
+  set -x
+	fabric-ca-client enroll -u https://ordererAdmin:ordererAdminpw@localhost:9054 --caname ca-orderer -M ${PWD}/organizations/ordererOrganizations/covid-ins.com/users/Admin@covid-ins.com/msp --tls.certfiles ${PWD}/organizations/fabric-ca/ordererOrg/tls-cert.pem
+  set +x
+
+  cp ${PWD}/organizations/ordererOrganizations/covid-ins.com/msp/config.yaml ${PWD}/organizations/ordererOrganizations/covid-ins.com/users/Admin@covid-ins.com/msp/config.yaml
+
+
+}
