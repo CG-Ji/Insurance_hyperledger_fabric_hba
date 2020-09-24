@@ -255,53 +255,53 @@ chaincodeQuery() {
 }
 
 # at first we package the chaincode
-# packageChaincode insurance
+ packageChaincode insurance
 
 # Install chaincode on peer0.insurance and peer0.hospital
-# echo "Installing chaincode on peer0.insurance..."
-# installChaincode insurance
-# echo "Install chaincode on peer0.hospital..."
-# installChaincode hospital
-# echo "Install chaincode on peer0.customer..."
-# installChaincode customer
+ echo "Installing chaincode on peer0.insurance..."
+ installChaincode insurance
+ echo "Install chaincode on peer0.hospital..."
+ installChaincode hospital
+ echo "Install chaincode on peer0.customer..."
+ installChaincode customer
 
 # query whether the chaincode is installed
-# queryInstalled insurance
+ queryInstalled insurance
 
 # approve the definition for insurance
-# approveForMyOrg insurance
+ approveForMyOrg insurance
 
 # check whether the chaincode definition is ready to be committed
-# checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
-# checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
-# checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
+ checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
+ checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
+ checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": false" "\"CustomerMSP\": false"
 
 # now approve also for hospital
-# approveForMyOrg hospital
+ approveForMyOrg hospital
 
 # check whether the chaincode definition is ready to be committed
-# checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
-# checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
-# checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
+ checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
+ checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
+ checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": false"
 
 # now approve also for hospital
-# approveForMyOrg customer
+ approveForMyOrg customer
 
 # check whether the chaincode definition is ready to be committed
-# checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
-# checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
-# checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
+ checkCommitReadiness insurance "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
+ checkCommitReadiness hospital "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
+ checkCommitReadiness customer "\"InsuranceMSP\": true" "\"HospitalMSP\": true" "\"CustomerMSP\": true"
 
 # now that we know for sure both orgs have approved, commit the definition
-# commitChaincodeDefinition insurance hospital customer
+ commitChaincodeDefinition insurance hospital customer
 
 # query on both orgs to see that the definition committed successfully
-# queryCommitted insurance
-# queryCommitted hospital
-# queryCommitted customer
+ queryCommitted insurance
+ queryCommitted hospital
+ queryCommitted customer
 
 # Invoke the chaincode
-# chaincodeInvokeInit insurance hospital
+ chaincodeInvokeInit insurance hospital
 
 ## Query chaincode on peer0.insurance
 echo "Querying chaincode on peer0.insurance..."
